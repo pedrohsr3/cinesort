@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineSort - Oscar Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg-body: #0d0e12;
+--bg-card: #16181f;
+--bg-input: #212430;
+--accent: #e50914;
+--gold: #ffc107;
+--text-main: #f3f4f6;
+--text-muted: #9ca3af;
+--border: #2a2e3d;
+--radius: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+body { background: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: 16px; }
+
+.app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+
+header { text-align: center; margin-top: 10px; }
+header h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(45deg, #fff, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+.nav-tabs { display: flex; background: var(--bg-card); padding: 4px; border-radius: 12px; border: 1px solid var(--border); }
+.tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: pointer; border-radius: 8px; transition: all 0.3s ease; }
+.tab-btn.active { background: var(--bg-input); color: #fff; border: 1px solid var(--border); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Card Sorteador */
+.movie-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; text-align: center; position: relative; min-height: 280px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+.badge { display: inline-block; background: rgba(255,193,7,0.15); color: var(--gold); border: 1px solid rgba(255,193,7,0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; align-self: center; }
+.movie-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; line-height: 1.2; }
+.movie-sub { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
+.movie-synopsis { font-size: 0.95rem; color: #d1d5db; line-height: 1.5; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; border-left: 3px solid var(--gold); text-align: left; }
+
+.actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.btn-main { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 0.2s, opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-main:active { transform: scale(0.98); }
+.btn-draw { background: linear-gradient(135deg, #e50914, #b20710); color: white; box-shadow: 0 4px 15px rgba(229,9,20,0.4); }
+.btn-seen { background: #10b981; color: white; }
+.btn-retry { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); }
+
+/* Slot Animation */
+.blur-anim { animation: roulette 0.1s infinite linear; filter: blur(2px); opacity: 0.6; }
+@keyframes roulette { 0% { transform: translateY(-5px); } 50% { transform: translateY(5px); } 100% { transform: translateY(-5px); } }
+
+/* Lista de Já Vistos */
+.seen-list { display: flex; flex-direction: column; gap: 12px; }
+.seen-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.seen-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.seen-rating { background: var(--gold); color: #000; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-size: 0.85rem; }
+.seen-review { font-size: 0.88rem; color: #d1d5db; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; font-style: italic; }
+.btn-edit { align-self: flex-end; background: transparent; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
+
+/* Modal Resenha */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
+.modal.active { display: flex; }
+.modal-body { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 420px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-body h3 { font-size: 1.2rem; font-weight: 700; }
+.rating-selector { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+.rate-btn { padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border); color: #fff; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.rate-btn.selected { background: var(--gold); color: #000; border-color: var(--gold); }
+textarea { width: 100%; height: 90px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; color: #fff; padding: 10px; resize: none; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+<header>
+<h1>CineSort Oscar</h1>
+<p id="user-sync-status">Sincronização em nuvem ativa</p>
+</header>
+
+<div class="nav-tabs">
+<button class="tab-btn active" onclick="switchTab('draw')">🎲 Sorteador</button>
+<button class="tab-btn" onclick="switchTab('seen')">🎬 Já Vistos (<span id="seen-count">0</span>)</button>
+</div>
+
+<!-- ABA 1: SORTEADOR -->
+<div id="tab-draw" class="tab-content active">
+<div class="movie-card" id="card-display">
+<span class="badge" id="m-category">Clique para Sortear</span>
+<h2 class="movie-title" id="m-title">Pronto para a sessão?</h2>
+<div class="movie-sub" id="m-sub">Oscar 1980 — 2026</div>
+<p class="movie-synopsis" id="m-synopsis">Sorteie entre centenas de indicados e vencedores das principais categorias do cinema mundial.</p>
+</div>
+
+<div class="actions">
+<button class="btn-main btn-draw" id="btn-draw" onclick="drawMovie()">✨ Sortear Filme</button>
+<div id="draw-actions" style="display: none; flex-direction: column; gap: 10px;">
+<button class="btn-main btn-seen" onclick="openReviewModal()">✅ Já Assisti (Avaliar)</button>
+<button class="btn-main btn-retry" onclick="drawMovie()">🔄 Tentar De Novo (Ignorar)</button>
+</div>
+</div>
+</div>
+
+<!-- ABA 2: JÁ VISTOS -->
+<div id="tab-seen" class="tab-content">
+<div class="seen-list" id="seen-container">
+<!-- Cards dinamicos entram aqui -->
+</div>
+</div>
+</div>
+
+<!-- MODAL DE RESENHA -->
+<div class="modal" id="review-modal">
+<div class="modal-body">
+<h3 id="modal-movie-title">Avaliar Filme</h3>
+<label style="font-size: 0.85rem; color: var(--text-muted);">Sua Nota (0 a 10):</label>
+<div class="rating-selector" id="rating-selector">
+<!-- Botoes de 0 a 10 -->
+</div>
+<textarea id="review-text" placeholder="Escreva sua resenha ou impressões sobre o filme..."></textarea>
+<button class="btn-main btn-seen" onclick="saveReview()">Salvar no Histórico</button>
+<button class="btn-main btn-retry" onclick="closeModal()">Cancelar</button>
+</div>
+</div>
+
+<script>
+// Base de Dados de Exemplo (1980-2026)
+const moviesDatabase = [
+{ id: 1, title: "O Silêncio dos Inocentes", original: "The Silence of the Lambs", year: 1992, category: "Melhor Filme", win: "Sim", synopsis: "Uma estagiária do FBI busca a ajuda de um psiquiatra e canibal preso para capturar um assassino em série." },
+{ id: 2, title: "Pulp Fiction: Tempo de Violência", original: "Pulp Fiction", year: 1995, category: "Melhor Roteiro Original", win: "Sim", synopsis: "As histórias de dois assassinos da máfia, um pugilista e um casal de assaltantes se cruzam em Los Angeles." },
+{ id: 3, title: "Parasita", original: "Gisaengchung", year: 2020, category: "Melhor Filme", win: "Sim", synopsis: "Toda a família de Ki-taek está desempregada, mas um evento inesperado os conecta com uma família rica." },
+{ id: 4, title: "O Senhor dos Anéis: O Retorno do Rei", original: "The Return of the King", year: 2004, category: "Melhor Filme", win: "Sim", synopsis: "A batalha final pela Terra-média atinge o seu ápice enquanto Frodo e Sam se aproximam da Montanha da Perdição." },
+{ id: 5, title: "Gladiador", original: "Gladiator", year: 2001, category: "Melhor Filme", win: "Sim", synopsis: "Um ex-general romano busca vingança contra o imperador corrupto que assassinou sua família." },
+{ id: 6, title: "Anatomia de uma Queda", original: "Anatomie d'une chute", year: 2024, category: "Melhor Roteiro Original", win: "Sim", synopsis: "Uma mulher é suspeita do assassinato de seu marido, e o julgamento expõe as intimidades do casal." },
+{ id: 7, title: "Oppenheimer", original: "Oppenheimer", year: 2024, category: "Melhor Filme", win: "Sim", synopsis: "A história do físico J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica." },
+{ id: 8, title: "Anora", original: "Anora", year: 2025, category: "Melhor Filme", win: "Sim", synopsis: "Uma jovem profissional do sexo de Brooklyn se casa por impulso com o filho de um oligarca russo." }
+ ];
+
+// Gerenciador de Chave de Sincronização (Sem Login)
+const urlParams = new URLSearchParams(window.location.search);
+let userId = urlParams.get('id');
+if (!userId) {
+userId = 'pedro_' + Math.random().toString(36).substr(2, 6);
+window.history.replaceState(null, null, ?id=${userId}); } document.getElementById('user-sync-status').innerText =ID do Usuário: ${userId};
+
+// Estado Local / JSONBin
+let seenHistory = JSON.parse(localStorage.getItem(cinesort_seen_${userId}`)) || {};
+let currentMovie = null;
+let selectedRating = 10;
+
+function saveState() {
+localStorage.setItem(cinesort_seen_${userId}`, JSON.stringify(seenHistory));
+updateSeenUI();
+}
+
+function switchTab(tab) {
+document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+if (tab === 'draw') {
+document.querySelectorAll('.tab-btn')[0].classList.add('active');
+document.getElementById('tab-draw').classList.add('active');
+} else {
+document.querySelectorAll('.tab-btn')[1].classList.add('active');
+document.getElementById('tab-seen').classList.add('active');
+updateSeenUI();
+}
+}
+
+function drawMovie() {
+const available = moviesDatabase.filter(m => !seenHistory[m.id]);
+if (available.length === 0) {
+alert('Parabéns! Você já assistiu a todos os filmes da lista.');
+return;
+}
+
+const card = document.getElementById('card-display');
+card.classList.add('blur-anim');
+
+setTimeout(() => {
+currentMovie = available[Math.floor(Math.random() * available.length)];
+document.getElementById('m-category').innerText = ${currentMovie.category} (${currentMovie.year});
+document.getElementById('m-title').innerText = currentMovie.title;
+document.getElementById('m-sub').innerText = ${currentMovie.original} • ${currentMovie.win === 'Sim' ? '🏆 Vencedor' : '🎬 Indicado'};
+document.getElementById('m-synopsis').innerText = currentMovie.synopsis;
+
+card.classList.remove('blur-anim');
+document.getElementById('btn-draw').style.display = 'none';
+document.getElementById('draw-actions').style.display = 'flex';
+}, 400);
+}
+
+// Modal & Ratings
+const ratingSelector = document.getElementById('rating-selector');
+for (let i = 0; i <= 10; i++) {
+const btn = document.createElement('button');
+btn.className = rate-btn ${i === 10 ? 'selected' : ''}`;
+btn.innerText = i;
+btn.onclick = () => {
+document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('selected'));
+btn.classList.add('selected');
+selectedRating = i;
+};
+ratingSelector.appendChild(btn);
+}
+
+function openReviewModal(editId = null) {
+if (editId) {
+currentMovie = moviesDatabase.find(m => m.id === editId);
+const prevData = seenHistory[editId];
+selectedRating = prevData ? prevData.rating : 10;
+document.getElementById('review-text').value = prevData ? prevData.review : '';
+} else {
+document.getElementById('review-text').value = '';
+}
+document.getElementById('modal-movie-title').innerText = currentMovie.title;
+document.getElementById('review-modal').classList.add('active');
+}
+
+function closeModal() {
+document.getElementById('review-modal').classList.remove('active');
+}
+
+function saveReview() {
+const reviewText = document.getElementById('review-text').value;
+seenHistory[currentMovie.id] = {
+rating: selectedRating,
+review: reviewText,
+date: new Date().toLocaleDateString('pt-BR')
+};
+saveState();
+closeModal();
+drawMovie(); // Sortear o próximo automaticamente
+}
+
+function updateSeenUI() {
+const container = document.getElementById('seen-container');
+container.innerHTML = '';
+const keys = Object.keys(seenHistory);
+document.getElementById('seen-count').innerText = keys.length;
+
+if (keys.length === 0) {
+container.innerHTML = '<p style="text-align:center; color: var(--text-muted); margin-top:20px;">Nenhum filme marcado como visto ainda.</p>';
+return;
+}
+
+keys.forEach(id => {
+const movie = moviesDatabase.find(m => m.id == id);
+const data = seenHistory[id];
+if (!movie) return;
+
+const card = document.createElement('div');
+card.className = 'seen-item';
+card.innerHTML = &lt;div class="seen-header"&gt; &lt;div&gt; &lt;strong&gt;${movie.title}</strong>
+<div style="font-size: 0.75rem; color: var(--text-muted);">{movie.category}</div>
+</div>
+<span class="seen-rating">★ {data.review ? <p class="seen-review"&gt;"${data.review}"</p>: ''} &lt;button class="btn-edit" onclick="openReviewModal(${movie.id})">Editar Avaliação</button>
+`;
+container.appendChild(card);
+});
+}
+
+// Inicialização
+updateSeenUI();
+</script>
+</body>
+</html>
